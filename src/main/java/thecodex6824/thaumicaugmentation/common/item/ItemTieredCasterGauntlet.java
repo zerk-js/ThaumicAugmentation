@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import javax.annotation.Nullable;
+
 import net.minecraft.block.BlockCauldron;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -81,6 +83,7 @@ import thaumcraft.common.lib.network.misc.PacketAuraToClient;
 import thaumcraft.common.lib.utils.BlockUtils;
 import thaumcraft.common.world.aura.AuraChunk;
 import thaumcraft.common.world.aura.AuraHandler;
+import thecodex6824.thaumicaugmentation.ThaumicAugmentation;
 import thecodex6824.thaumicaugmentation.api.TAConfig;
 import thecodex6824.thaumicaugmentation.api.TAItems;
 import thecodex6824.thaumicaugmentation.api.augment.AugmentableItem;
@@ -150,9 +153,9 @@ public class ItemTieredCasterGauntlet extends ItemTABase implements IArchitect, 
         else {
             int voidseerArea = TAConfig.voidseerArea.getValue();
             float totalVis = 0.0F;
-            TreeMap<Float, BlockPos> visAmounts = new TreeMap<>();
-            for (int x = -voidseerArea / 2; x < (int) Math.ceil(voidseerArea / 2); ++x) {
-                for (int z = -voidseerArea / 2; z < (int) Math.ceil(voidseerArea / 2); ++z) {
+            TreeMap<Float, BlockPos> visAmounts = new TreeMap<>((f1, f2) -> Float.compare(f2, f1));
+            for (int x = -voidseerArea / 2; x < (int) Math.ceil(voidseerArea / 2.0); ++x) {
+                for (int z = -voidseerArea / 2; z < (int) Math.ceil(voidseerArea / 2.0); ++z) {
                     BlockPos loc = user.getPosition().add(x * 16, 0, z * 16);
                     if (user.getEntityWorld().isBlockLoaded(loc, true)) {
                         float vis = AuraHelper.getVis(user.getEntityWorld(), loc);
@@ -307,9 +310,8 @@ public class ItemTieredCasterGauntlet extends ItemTABase implements IArchitect, 
             FocusPackage fPackage = ItemFocus.getPackage(getFocusStack(stack));
             if (fPackage != null) {
                 for (IFocusElement element : fPackage.nodes) {
-                    if (element instanceof IArchitect) {
+                    if (element instanceof IArchitect)
                         return ((IArchitect) element).showAxis(stack, world, player, side, axis);
-                    }
                 }
             } 
         }
@@ -426,9 +428,10 @@ public class ItemTieredCasterGauntlet extends ItemTABase implements IArchitect, 
                 ((IInteractWithCaster) tile).onCasterRightClick(world, stack, player, pos, side, hand))
             return EnumActionResult.PASS;
 
-        if (CasterTriggerRegistry.hasTrigger(state))
+        if (CasterTriggerRegistry.hasTrigger(state)) {
             return CasterTriggerRegistry.performTrigger(world, stack, player, pos, side, state) ? 
                     EnumActionResult.SUCCESS : EnumActionResult.FAIL;
+        }
 
         if (isStoringFocus(stack)) {
             ItemStack focus = getFocusStack(stack);
@@ -439,7 +442,7 @@ public class ItemTieredCasterGauntlet extends ItemTABase implements IArchitect, 
                         if (!world.isRemote) {
                             ItemStack toStore = new ItemStack(state.getBlock(), 1, state.getBlock().getMetaFromState(state));
                             try {
-                                if (state.getBlock() != Blocks.AIR) {
+                                if (!state.getBlock().isAir(state, world, pos)) {
                                     ItemStack toCopy = BlockUtils.getSilkTouchDrop(state);
                                     if (toCopy != null && !toCopy.isEmpty())
                                         toStore = toCopy.copy();
@@ -523,26 +526,31 @@ public class ItemTieredCasterGauntlet extends ItemTABase implements IArchitect, 
     public NBTTagCompound getNBTShareTag(ItemStack stack) {
         NBTTagCompound tag = new NBTTagCompound();
         if (stack.hasTagCompound())
-            tag.setTag("item", stack.getTagCompound());
+            tag.setTag("item", stack.getTagCompound().copy());
         
-        tag.setTag("cap", stack.getCapability(CapabilityAugmentableItem.AUGMENTABLE_ITEM, null).serializeNBT());
+        tag.setTag("cap", ((AugmentableItem) stack.getCapability(CapabilityAugmentableItem.AUGMENTABLE_ITEM, null)).serializeNBT());
         return tag;
     }
     
     @Override
-    public void readNBTShareTag(ItemStack stack, NBTTagCompound nbt) {
+    public void readNBTShareTag(ItemStack stack, @Nullable NBTTagCompound nbt) {
         if (nbt != null) {
+            if (nbt.hasKey("cap", NBT.TAG_COMPOUND))
+                ((AugmentableItem) stack.getCapability(CapabilityAugmentableItem.AUGMENTABLE_ITEM, null)).deserializeNBT(nbt.getCompoundTag("cap"));
             if (nbt.hasKey("item", NBT.TAG_COMPOUND))
                 stack.setTagCompound(nbt.getCompoundTag("item"));
+            else if (FMLCommonHandler.instance().getEffectiveSide() == Side.SERVER) {
+                nbt.removeTag("cap");
+                if (!nbt.isEmpty())
+                    stack.setTagCompound(nbt);
+            }
             
-            if (FMLCommonHandler.instance().getEffectiveSide() == Side.CLIENT && !Minecraft.getMinecraft().isSingleplayer()) {
+            if (FMLCommonHandler.instance().getEffectiveSide() == Side.CLIENT && !ThaumicAugmentation.proxy.isSingleplayer()) {
                 if (!stack.hasTagCompound())
                     stack.setTagCompound(new NBTTagCompound());
                 
                 stack.getTagCompound().setTag("cap", nbt.getCompoundTag("cap"));
             }
-            
-            stack.getCapability(CapabilityAugmentableItem.AUGMENTABLE_ITEM, null).deserializeNBT(nbt.getCompoundTag("cap"));
         }
     }
     
