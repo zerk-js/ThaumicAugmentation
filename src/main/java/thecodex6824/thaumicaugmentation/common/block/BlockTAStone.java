@@ -44,6 +44,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import thecodex6824.thaumicaugmentation.api.TAItems;
 import thecodex6824.thaumicaugmentation.api.block.property.ITAStoneType;
 import thecodex6824.thaumicaugmentation.common.block.prefab.BlockTABase;
 import thecodex6824.thaumicaugmentation.common.block.trait.IItemBlockProvider;
@@ -113,9 +114,11 @@ public class BlockTAStone extends BlockTABase implements ITAStoneType, IItemBloc
     }
     
     @Override
-    public void getSubBlocks(CreativeTabs itemIn, NonNullList<ItemStack> items) {
-        for (StoneType type : StoneType.values())
-            items.add(new ItemStack(this, 1, type.getMeta()));
+    public void getSubBlocks(CreativeTabs tab, NonNullList<ItemStack> items) {
+        if (tab == TAItems.CREATIVE_TAB || tab == CreativeTabs.SEARCH) {
+            for (StoneType type : StoneType.values())
+                items.add(new ItemStack(this, 1, type.getMeta()));
+        }
     }
     
     @Override

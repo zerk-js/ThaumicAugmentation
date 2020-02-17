@@ -14,6 +14,7 @@ tile.thaumicaugmentation.stone.ancient_bricks.name=Ancient Bricks
 tile.thaumicaugmentation.stone.stone_crusted.name=Crusted Stone
 tile.thaumicaugmentation.stone.stone_crusted_glowing.name=Glowing Crusted Stone
 tile.thaumicaugmentation.stone.ancient_pillar.name=Ancient Pillar
+tile.thaumicaugmentation.stone.chiseled_ancient_bricks.name=Smooth Ancient Brick
 tile.thaumicaugmentation.arcane_trapdoor_wood.name=Greatwood Arcane Trapdoor
 tile.thaumicaugmentation.arcane_trapdoor_metal.name=Thaumium Arcane Trapdoor
 tile.thaumicaugmentation.arcane_trapdoor_silverwood.name=Silverwood Arcane Trapdoor
@@ -40,6 +41,11 @@ tile.thaumicaugmentation.impetus_gate.name=Impetus Restrictor
 tile.thaumicaugmentation.stairs_ancient.name=Ancient Stone Stairs
 tile.thaumicaugmentation.stairs_eldritch_tile.name=Eldritch Stone Stairs
 tile.thaumicaugmentation.ancient_tile_slab.name=Ancient Stone Tile Slab
+tile.thaumicaugmentation.bars.bars_ancient.name=Ancient Bars
+tile.thaumicaugmentation.fortified_glass.name=Fortified Glass
+tile.thaumicaugmentation.starfield_glass.glass_rift.name=Starfield Glass (Rift)
+tile.thaumicaugmentation.starfield_glass.glass_fracture.name=Starfield Glass (Dimensional Fracture)
+tile.thaumicaugmentation.starfield_glass.glass_mirror.name=Starfield Glass (Magic Mirror)
 
 tile.thaumcraft.stairs_ancient_tile.name=Ancient Stone Tile Stairs
 
@@ -126,7 +132,7 @@ thaumicaugmentation.text.energy_weak=Weak
 thaumicaugmentation.text.energy_medium=Medium
 thaumicaugmentation.text.energy_strong=Strong
 thaumicaugmentation.text.energy_max=Maximum
-thaumicaugmentation.text.entered_void=%sYou have visited a vast Emptiness.
+thaumicaugmentation.text.entered_void=You have visited a vast Emptiness.
 thaumicaugmentation.text.stored_seal=Seal: %s
 thaumicaugmentation.text.strength_provider_any=Any Modifier
 thaumicaugmentation.text.effect_provider_any=Any Effect Crystal
@@ -148,6 +154,15 @@ thaumicaugmentation.text.gate_manual=Impetus Restrictor mode: Manual Control
 thaumicaugmentation.text.gate_redstone=Impetus Restrictor mode: Redstone Control
 thaumicaugmentation.text.gate_cycle_limit=New manual Impetus Restrictor limit: %d
 thaumicaugmentation.text.drawing_disabled=Drawing Ability Disabled
+thaumicaugmentation.text.network_kick=Kicked for protocol violation (cheating attempt?)
+thaumicaugmentation.text.gate_mode=Mode: 
+thaumicaugmentation.text.gate_mode_redstone=Redstone
+thaumicaugmentation.text.gate_mode_manual=Manual Control
+thaumicaugmentation.text.gate_level=Level: 
+thaumicaugmentation.text.gate_level_limit=%d
+
+thaumicaugmentation.text.damage.impetus=%s was obliterated
+thaumicaugmentation.text.damage.impetus_attack=%s was obliterated by %s
 
 thaumicaugmentation.text.config.general=General
 thaumicaugmentation.text.config.gameplay=Gameplay
@@ -191,6 +206,12 @@ focus.thaumicaugmentation.shield.reflect_no=No
 focus.thaumicaugmentation.shield.reflect_yes=Yes
 focus.thaumicaugmentation.water.name=Water
 focus.thaumicaugmentation.water.text=Summons a torrent of water that can extinguish fires and water crops, in addition to possibly dealing a small amount of damage.
+
+thaumicaugmentation.research.card.rift_jar.title=Rift in a Jar
+thaumicaugmentation.research.card.rift_jar.text=Gazing at the rift floating harmlessly in the nearby jar reminds you that combining multiple facets of Thaumaturgy can turn what could have once been insurmountable obstacles into new opportunities. Gain a random amount of progress in 3 random, non-rejected categories, and 2 additional categories will gain the full bonus upon completion.
+
+thaumicaugmentation.research.card.rift_monitor.title=Extradimensional Monitor
+thaumicaugmentation.research.card.rift_monitor.text=The Extradimensional Monitor's vibrant holograms allow you to study the Eldritch from afar and with a greater clarity than before. Gain 20 to 40 Eldritch progress, with no chance of obtaining any warp.
 
 tc.research_category.THAUMIC_AUGMENTATION=Thaumic Augmentation
 thaumicaugmentation.research.thaumic_augmentation_base.title=Thaumic Augmentation

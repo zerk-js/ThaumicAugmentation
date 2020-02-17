@@ -27,7 +27,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
@@ -209,9 +209,9 @@ public final class NodeHelper {
                     break;
                 }
                 else {
-                    double dX = target.x - r.getBlockPos().getX();
-                    double dY = target.y - r.getBlockPos().getY();
-                    double dZ = target.z - r.getBlockPos().getZ();
+                    double dX = Math.max(-1, Math.min(1, target.x - r.getBlockPos().getX()));
+                    double dY = Math.max(-1, Math.min(1, target.y - r.getBlockPos().getY()));
+                    double dZ = Math.max(-1, Math.min(1, target.z - r.getBlockPos().getZ()));
                     start = new Vec3d(r.getBlockPos().add(dX, dY, dZ));
                 }
             }
@@ -286,10 +286,11 @@ public final class NodeHelper {
     }
     
     public static void damageEntitiesFromTransaction(Deque<IImpetusNode> path, long energy) {
-        damageEntitiesFromTransaction(path, entity -> ImpetusAPI.causeImpetusDamage(null, entity, Math.max(energy / 10.0F, 1.0F)));
+        damageEntitiesFromTransaction(path, (node, entity) -> ImpetusAPI.causeImpetusDamage(node.getLocation().getDimension() == entity.dimension ?
+                new Vec3d(node.getLocation().getPos()) : null, entity, Math.max(energy / 10.0F, 1.0F)));
     }
     
-    public static void damageEntitiesFromTransaction(Deque<IImpetusNode> path, Consumer<Entity> damageFunc) {
+    public static void damageEntitiesFromTransaction(Deque<IImpetusNode> path, BiConsumer<IImpetusNode, Entity> damageFunc) {
         if (path.size() >= 2) {
             Iterator<IImpetusNode> iterator = path.iterator();
             IImpetusNode first = iterator.next();
@@ -300,7 +301,7 @@ public final class NodeHelper {
                     World world = DimensionManager.getWorld(first.getLocation().getDimension());
                     if (world != null) {
                         for (Entity e : RaytraceHelper.raytraceEntities(world, first.getBeamEndpoint(), second.getBeamEndpoint()))
-                            damageFunc.accept(e);
+                            damageFunc.accept(first, e);
                     }
                 }
                 

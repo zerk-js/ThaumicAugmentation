@@ -50,6 +50,7 @@ import thecodex6824.thaumicaugmentation.api.config.ConfigOptionFloat;
 import thecodex6824.thaumicaugmentation.api.config.ConfigOptionInt;
 import thecodex6824.thaumicaugmentation.api.config.ConfigOptionIntList;
 import thecodex6824.thaumicaugmentation.api.config.ConfigOptionLong;
+import thecodex6824.thaumicaugmentation.api.config.ConfigOptionStringArray;
 import thecodex6824.thaumicaugmentation.api.config.ConfigOptionStringList;
 import thecodex6824.thaumicaugmentation.api.config.ConfigOptionStringToIntMap;
 import thecodex6824.thaumicaugmentation.api.config.IEnumSerializer;
@@ -178,7 +179,7 @@ public final class TAConfigHolder {
                     "so while this damage can theoretically be seen per tick, in practice this is",
                     "extremely unlikely and would take a large crowd and good aim to achieve."
                 })
-                public float beamDamage = 6.0F;
+                public float beamDamage = 4.0F;
                 
                 @Name("beamCost")
                 @Comment({
@@ -228,22 +229,22 @@ public final class TAConfigHolder {
                     "to allow the other rounds to do damage.",
                     "Since there are three shots fired by the burst, the effective damage is three times this value."
                 })
-                public float burstDamage = 4.0F;
+                public float burstDamage = 3.0F;
                 
                 @Name("burstCost")
                 @Comment({
-                    "The amount of Impetus used by the Impulse Cannon's burst attack per shot.",
+                    "The amount of Impetus used by the Impulse Cannon's burst attack per burst.",
                     "This cost is paid even if nothing is being hit by the shot."
                 })
-                public int burstCost = 2;
+                public int burstCost = 6;
                 
                 @Name("burstCooldown")
                 @Comment({
-                    "The cooldown in ticks between shots of the Impulse Cannon in railgun mode.",
+                    "The cooldown in ticks between shots of the Impulse Cannon in burst mode.",
                     "Note that this will lock the player out of all Impulse Cannons in their inventory for",
                     "this duration."
                 })
-                public int burstCooldown = 20;
+                public int burstCooldown = 23;
                 
                 @Name("burstRange")
                 @Comment({
@@ -356,6 +357,21 @@ public final class TAConfigHolder {
         })
         @RequiresMcRestart
         public float primalCutterDamage = 6.0F;
+        
+        @Name("blacklistedResearchCategories")
+        @Comment({
+            "The list of research categories that Thaumic Augmentation will never willingly give research in.",
+            "Sadly Thaumcraft makes all addons have a research category, even if they don't intend on using it.",
+            "This is why cards like \"experiment\" can give categories that never appear otherwise."
+        })
+        public String[] blacklistedCategories = new String[] {
+                "THAUMIC_AUGMENTATION",
+                "THAUMIC_TINKERER",
+                "THAUMIC_WONDERS",
+                "RUSTIC_THAUMATURGY",
+                "PERIPHERY",
+                "ENGINEERED_GOLEMS"
+        };
         
     }
     
@@ -532,6 +548,8 @@ public final class TAConfigHolder {
         TAConfig.cannonBurstRange.setValue(gameplay.impetus.cannon.burstRange);
         
         TAConfig.primalCutterDamage.setValue(gameplay.primalCutterDamage);
+        
+        TAConfig.blacklistedCategories.setValue(gameplay.blacklistedCategories);
     }
 
     public static void syncLocally() {
@@ -625,6 +643,8 @@ public final class TAConfigHolder {
         TAConfig.cannonBurstRange = TAConfigManager.addOption(new ConfigOptionDouble(true, gameplay.impetus.cannon.burstRange));
     
         TAConfig.primalCutterDamage = TAConfigManager.addOption(new ConfigOptionFloat(false, gameplay.primalCutterDamage));
+    
+        TAConfig.blacklistedCategories = TAConfigManager.addOption(new ConfigOptionStringArray(true, gameplay.blacklistedCategories));
     }
 
 }

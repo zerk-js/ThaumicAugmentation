@@ -8,17 +8,25 @@
     "perditio": 1
   },
   "pattern": [
-    "V V",
+    "I I",
     "VCV",
-    " V "
+    "SVS"
   ],
   "key": {
     "V": {
       "type": "forge:ore_dict",
       "ore": "plateVoid"
     },
+    "I": {
+      "type": "forge:ore_dict",
+      "ore": "plateIron"
+    },
     "C": {
       "item": "#IMPETUS_RESONATOR"
+    },
+    "S": {
+      "item": "thaumcraft:stone_arcane",
+      "data": 0
     }
   },
   "result": {

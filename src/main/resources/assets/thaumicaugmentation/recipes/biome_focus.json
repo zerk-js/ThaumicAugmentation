@@ -1,0 +1,36 @@
+{
+  "type": "thaumicaugmentation:arcane_shaped",
+  "research": "ARCANE_TERRAFORMER",
+  "vis": 25,
+  "aspects": {
+    "ignis": 1,
+    "aqua": 1,
+    "terra": 1,
+    "aer": 1,
+    "ordo": 1,
+    "perditio": 1
+  },
+  "pattern": [
+    "BTB",
+    "TFT",
+    "BTB"
+  ],
+  "key": {
+    "B": {
+      "type": "forge:ore_dict",
+      "ore": "plateBrass"
+    },
+    "T": {
+      "type": "forge:ore_dict",
+      "ore": "plateThaumium"
+    },
+    "F": {
+      "item": "thaumcraft:focus_1",
+      "data": 0
+    }
+  },
+  "result": {
+    "item": "thaumicaugmentation:biome_selector",
+    "data": 0
+  }
+}

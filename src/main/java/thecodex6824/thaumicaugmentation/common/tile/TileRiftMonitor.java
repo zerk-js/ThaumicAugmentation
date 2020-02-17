@@ -55,6 +55,7 @@ public class TileRiftMonitor extends TileEntity implements ITickable {
         super();
         lastResult = -1;
         target = new WeakReference<>(null);
+        clientTargetID = -1;
     }
     
     @Nullable
@@ -68,6 +69,7 @@ public class TileRiftMonitor extends TileEntity implements ITickable {
         if (!entities.isEmpty()) {
             if (target.get() == null || target.get().isDead) {
                 target = new WeakReference<>(entities.get(0));
+                serverTargetID = entities.get(0).getPersistentID();
                 world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
                 markDirty();
             }
@@ -82,6 +84,7 @@ public class TileRiftMonitor extends TileEntity implements ITickable {
                 
                 if (!found) {
                     target = new WeakReference<>(entities.get(0));
+                    serverTargetID = entities.get(0).getPersistentID();
                     world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
                     markDirty();
                 }
@@ -122,18 +125,16 @@ public class TileRiftMonitor extends TileEntity implements ITickable {
     
     protected void loadTargetFromID() {
         if (!world.isRemote) {
-            List<Entity> list = world.getEntities(Entity.class, e -> e != null && e.getUniqueID().equals(serverTargetID));
+            List<Entity> list = world.getEntities(Entity.class, e -> e != null && e.getPersistentID().equals(serverTargetID));
             if (!list.isEmpty()) {
                 target = new WeakReference<>(list.get(0));
                 world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
             }
-            
-            serverTargetID = null;
         }
         else {
-            List<Entity> list = world.getEntities(Entity.class, e -> e != null && e.getEntityId() == clientTargetID);
-            if (!list.isEmpty()) {
-                target = new WeakReference<>(list.get(0));
+            Entity e = world.getEntityByID(clientTargetID);
+            if (e != null) {
+                target = new WeakReference<>(e);
                 clientTargetID = -1;
             }
         }
@@ -142,11 +143,13 @@ public class TileRiftMonitor extends TileEntity implements ITickable {
     @Override
     public void update() {
         if (!world.isRemote) {
-            if (serverTargetID != null)
-                loadTargetFromID();
-            
-            if (timer++ % 20 == 0 && (target.get() == null || target.get().isDead))
-                cycleTarget();
+            if (timer++ % 20 == 0 && (target.get() == null || target.get().isDead)) {
+                if (serverTargetID != null)
+                    loadTargetFromID();
+                
+                if (target.get() == null || target.get().isDead)
+                    cycleTarget();
+            }
             
             if (target.get() != null) {
                 if (target.get().isDead) {
@@ -200,7 +203,7 @@ public class TileRiftMonitor extends TileEntity implements ITickable {
         else
             target.clear();
         
-        world.markBlockRangeForRenderUpdate(pos, pos);
+        world.markBlockRangeForRenderUpdate(pos, pos.up());
     }
     
     @Override
@@ -223,15 +226,14 @@ public class TileRiftMonitor extends TileEntity implements ITickable {
         else
             target.clear();
         
-        world.markBlockRangeForRenderUpdate(pos, pos);
+        world.markBlockRangeForRenderUpdate(pos, pos.up());
     }
     
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound compound) {
         compound.setBoolean("mode", mode);
-        Entity e = target.get();
-        if (e != null)
-            compound.setUniqueId("target", e.getUniqueID());
+        if (serverTargetID != null)
+            compound.setUniqueId("target", serverTargetID);
         
         return super.writeToNBT(compound);
     }

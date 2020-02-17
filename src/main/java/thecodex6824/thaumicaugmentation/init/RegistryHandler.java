@@ -58,6 +58,7 @@ import thecodex6824.thaumicaugmentation.common.block.BlockArcaneDoor;
 import thecodex6824.thaumicaugmentation.common.block.BlockArcaneTerraformer;
 import thecodex6824.thaumicaugmentation.common.block.BlockArcaneTrapdoor;
 import thecodex6824.thaumicaugmentation.common.block.BlockCastedLight;
+import thecodex6824.thaumicaugmentation.common.block.BlockFortifiedGlass;
 import thecodex6824.thaumicaugmentation.common.block.BlockImpetusDiffuser;
 import thecodex6824.thaumicaugmentation.common.block.BlockImpetusDrainer;
 import thecodex6824.thaumicaugmentation.common.block.BlockImpetusGate;
@@ -72,6 +73,8 @@ import thecodex6824.thaumicaugmentation.common.block.BlockRiftMonitor;
 import thecodex6824.thaumicaugmentation.common.block.BlockRiftMoverInput;
 import thecodex6824.thaumicaugmentation.common.block.BlockRiftMoverOutput;
 import thecodex6824.thaumicaugmentation.common.block.BlockStabilityFieldGenerator;
+import thecodex6824.thaumicaugmentation.common.block.BlockStarfieldGlass;
+import thecodex6824.thaumicaugmentation.common.block.BlockTABars;
 import thecodex6824.thaumicaugmentation.common.block.BlockTASlab;
 import thecodex6824.thaumicaugmentation.common.block.BlockTAStairs;
 import thecodex6824.thaumicaugmentation.common.block.BlockTAStone;
@@ -91,6 +94,7 @@ import thecodex6824.thaumicaugmentation.common.item.ItemBiomeSelector;
 import thecodex6824.thaumicaugmentation.common.item.ItemCustomCasterAugment;
 import thecodex6824.thaumicaugmentation.common.item.ItemCustomCasterEffectProvider;
 import thecodex6824.thaumicaugmentation.common.item.ItemCustomCasterStrengthProvider;
+import thecodex6824.thaumicaugmentation.common.item.ItemEldritchLockKey;
 import thecodex6824.thaumicaugmentation.common.item.ItemElytraHarness;
 import thecodex6824.thaumicaugmentation.common.item.ItemElytraHarnessAugment;
 import thecodex6824.thaumicaugmentation.common.item.ItemFocusAncient;
@@ -114,6 +118,7 @@ import thecodex6824.thaumicaugmentation.common.item.prefab.ItemTABase;
 import thecodex6824.thaumicaugmentation.common.recipe.AugmentAdditionRecipe;
 import thecodex6824.thaumicaugmentation.common.recipe.AugmentRemovalRecipe;
 import thecodex6824.thaumicaugmentation.common.recipe.AuthorizedKeyCreationRecipe;
+import thecodex6824.thaumicaugmentation.common.recipe.BiomeSelectorSpecialResetRecipe;
 import thecodex6824.thaumicaugmentation.common.recipe.CustomAugmentCreationRecipe;
 import thecodex6824.thaumicaugmentation.common.recipe.DyeableItemRecipe;
 import thecodex6824.thaumicaugmentation.common.recipe.ElementChangeRecipe;
@@ -137,6 +142,7 @@ import thecodex6824.thaumicaugmentation.common.tile.TileRiftMonitor;
 import thecodex6824.thaumicaugmentation.common.tile.TileRiftMoverInput;
 import thecodex6824.thaumicaugmentation.common.tile.TileRiftMoverOutput;
 import thecodex6824.thaumicaugmentation.common.tile.TileStabilityFieldGenerator;
+import thecodex6824.thaumicaugmentation.common.tile.TileStarfieldGlass;
 import thecodex6824.thaumicaugmentation.common.tile.TileVisRegenerator;
 import thecodex6824.thaumicaugmentation.common.tile.TileVoidRechargePedestal;
 import thecodex6824.thaumicaugmentation.common.tile.TileWardedChest;
@@ -200,6 +206,9 @@ public final class RegistryHandler {
         registry.register(setupBlock(new BlockImpetusGate(), "impetus_gate"));
         registry.register(setupBlock(new BlockTASlab.Half(), "slab"));
         registry.register(setupBlock(new BlockTASlab.Double(), "slab_double"));
+        registry.register(setupBlock(new BlockTABars(), "bars"));
+        registry.register(setupBlock(new BlockFortifiedGlass(), "fortified_glass"));
+        registry.register(setupBlock(new BlockStarfieldGlass(), "starfield_glass"));
 
         GameRegistry.registerTileEntity(TileVisRegenerator.class, new ResourceLocation(ThaumicAugmentationAPI.MODID, "vis_regenerator"));
         GameRegistry.registerTileEntity(TileWardedChest.class, new ResourceLocation(ThaumicAugmentationAPI.MODID, "warded_chest"));
@@ -221,6 +230,7 @@ public final class RegistryHandler {
         GameRegistry.registerTileEntity(TileImpetusGenerator.class, new ResourceLocation(ThaumicAugmentationAPI.MODID, "impetus_generator"));
         GameRegistry.registerTileEntity(TileStabilityFieldGenerator.class, new ResourceLocation(ThaumicAugmentationAPI.MODID, "stability_field_generator"));
         GameRegistry.registerTileEntity(TileImpetusGate.class, new ResourceLocation(ThaumicAugmentationAPI.MODID, "impetus_gate"));
+        GameRegistry.registerTileEntity(TileStarfieldGlass.class, new ResourceLocation(ThaumicAugmentationAPI.MODID, "starfield_glass"));
     }
     
     @SubscribeEvent(priority = EventPriority.LOW)
@@ -264,8 +274,15 @@ public final class RegistryHandler {
         registry.register(setupItem(new ItemImpulseCannon(), "impulse_cannon"));
         registry.register(setupItem(new ItemImpulseCannonAugment(), "impulse_cannon_augment"));
         registry.register(new ItemFocusAncient()); // had to setup in constructor due to TC doing things to the item
+        registry.register(setupItem(new ItemEldritchLockKey(), "eldritch_lock_key"));
         
         AugmentHandler.registerAugmentBuilderComponents();
+    }
+    
+    @SubscribeEvent(priority = EventPriority.LOW)
+    public static void registerOreDict(RegistryEvent.Register<Item> event) {
+        OreDictionary.registerOre("blockAmber", BlocksTC.amberBlock);
+        OreDictionary.registerOre("blockAmber", BlocksTC.amberBrick);
     }
 
     @SubscribeEvent
@@ -286,6 +303,7 @@ public final class RegistryHandler {
         event.getRegistry().register(new CustomAugmentCreationRecipe().setRegistryName(new ResourceLocation(ThaumicAugmentationAPI.MODID, "custom_augment")));
         event.getRegistry().register(new MorphicToolUnbindingRecipe().setRegistryName(new ResourceLocation(ThaumicAugmentationAPI.MODID, "morphic_tool_unbinding")));
         event.getRegistry().register(new PrimalCutterAbilityRecipe().setRegistryName(new ResourceLocation(ThaumicAugmentationAPI.MODID, "primal_cutter_ability")));
+        event.getRegistry().register(new BiomeSelectorSpecialResetRecipe().setRegistryName(new ResourceLocation(ThaumicAugmentationAPI.MODID, "biome_selector_special_reset")));
     }
 
     @SubscribeEvent
@@ -354,6 +372,13 @@ public final class RegistryHandler {
         proxy.registerObjectTag(new ItemStack(TABlocks.STONE, 1, 0), new AspectList().add(Aspect.EARTH, 5).add(Aspect.VOID, 5).add(Aspect.DARKNESS, 3));
         proxy.registerObjectTag(new ItemStack(TABlocks.STONE, 1, 1), new AspectList().add(Aspect.EARTH, 3).add(Aspect.VOID, 3).add(Aspect.DARKNESS, 3).add(Aspect.FLUX, 3));
         proxy.registerObjectTag(new ItemStack(TABlocks.STONE, 1, 2), new AspectList().add(Aspect.EARTH, 3).add(Aspect.VOID, 3).add(Aspect.DARKNESS, 3).add(Aspect.FLUX, 3));
+        proxy.registerObjectTag(new ItemStack(TABlocks.STONE, 1, 3), new AspectList().add(Aspect.EARTH, 5).add(Aspect.ELDRITCH, 5).add(Aspect.MIND, 3));
+        proxy.registerObjectTag(new ItemStack(TABlocks.STONE, 1, 4), new AspectList().add(Aspect.EARTH, 5).add(Aspect.ELDRITCH, 5).add(Aspect.MIND, 10));
+        proxy.registerObjectTag(new ItemStack(TABlocks.STONE, 1, 5), new AspectList().add(Aspect.EARTH, 5).add(Aspect.ELDRITCH, 5).add(Aspect.ORDER, 3));
+        proxy.registerObjectTag(new ItemStack(TABlocks.STONE, 1, 6), new AspectList().add(Aspect.EARTH, 5).add(Aspect.ELDRITCH, 5).add(Aspect.ENTROPY, 3).add(Aspect.LIFE, 3));
+        proxy.registerObjectTag(new ItemStack(TABlocks.STONE, 1, 7), new AspectList().add(Aspect.EARTH, 5).add(Aspect.ELDRITCH, 5).add(Aspect.ENTROPY, 3).add(Aspect.LIFE, 3).add(Aspect.LIGHT, 10));
+        proxy.registerObjectTag(new ItemStack(TABlocks.STONE, 1, 8), new AspectList().add(Aspect.EARTH, 5).add(Aspect.ELDRITCH, 5).add(Aspect.ORDER, 3));
+        proxy.registerObjectTag(new ItemStack(TABlocks.STONE, 1, 9), new AspectList().add(Aspect.EARTH, 5).add(Aspect.ELDRITCH, 5).add(Aspect.ORDER, 3));
         proxy.registerObjectTag(new ItemStack(TABlocks.TAINT_FLOWER), new AspectList().add(Aspect.FLUX, 10).add(Aspect.PLANT, 5));
         proxy.registerComplexObjectTag(new ItemStack(TABlocks.VIS_REGENERATOR), new AspectList().add(Aspect.AURA, 20).add(Aspect.MECHANISM, 15).add(Aspect.ENERGY, 5));
         proxy.registerComplexObjectTag(new ItemStack(TABlocks.WARDED_CHEST), new AspectList().add(Aspect.PROTECT, 7));

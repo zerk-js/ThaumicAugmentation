@@ -1,0 +1,31 @@
+{
+  "type": "thaumicaugmentation:arcane_shaped",
+  "research": "IMPETUS_TRANSPORT",
+  "vis": 125,
+  "aspects": {
+    "ordo": 1,
+    "perditio": 1
+  },
+  "pattern": [
+    "PP",
+    "RP",
+    "S "
+  ],
+  "key": {
+    "P": {
+      "type": "forge:ore_dict",
+      "ore": "plateVoid"
+    },
+    "R": {
+      "item": "#IMPETUS_RESONATOR"
+    },
+    "S": {
+      "item": "minecraft:stick",
+      "data": 0
+    }
+  },
+  "result": {
+    "item": "thaumicaugmentation:impetus_linker",
+    "data": 0
+  }
+}

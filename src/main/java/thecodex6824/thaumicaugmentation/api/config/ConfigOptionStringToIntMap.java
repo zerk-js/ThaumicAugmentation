@@ -23,6 +23,8 @@ package thecodex6824.thaumicaugmentation.api.config;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import com.google.common.collect.ImmutableMap;
+
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -31,31 +33,35 @@ import io.netty.buffer.ByteBuf;
  */
 public class ConfigOptionStringToIntMap extends ConfigOption<Map<String, Integer>>{
 
-    private Map<String, Integer> value;
+    protected ImmutableMap<String, Integer> value;
     
     public ConfigOptionStringToIntMap(boolean enforceServer, Map<String, Integer> map) {
         super(enforceServer);
-        value = map;
+        value = ImmutableMap.copyOf(map);
     }
     
     @Override
     public void serialize(ByteBuf buf) {
         buf.writeInt(value.size());
         value.forEach((String k, Integer v) -> {
-            buf.writeInt(k.length());
-            buf.writeBytes(k.getBytes(StandardCharsets.UTF_8));
+            byte[] data = k.getBytes(StandardCharsets.UTF_8);
+            buf.writeInt(data.length);
+            buf.writeBytes(data);
             buf.writeInt(v);
         });
     }
 
     @Override
     public void deserialize(ByteBuf buf) {
+        ImmutableMap.Builder<String, Integer> builder = ImmutableMap.builder();
         int entries = buf.readInt();
         for (int i = 0; i < entries; ++i) {
-            byte[] name = new byte[buf.readInt()];
+            byte[] name = new byte[Math.min(buf.readInt(), 2097152)];
             buf.readBytes(name);
-            value.put(new String(name, StandardCharsets.UTF_8), buf.readInt());
+            builder.put(new String(name, StandardCharsets.UTF_8), buf.readInt());
         }
+        
+        value = builder.build();
     }
 
     @Override
@@ -65,7 +71,7 @@ public class ConfigOptionStringToIntMap extends ConfigOption<Map<String, Integer
 
     @Override
     public void setValue(Map<String, Integer> value) {
-        this.value = value;
+        this.value = ImmutableMap.copyOf(value);
     }
     
 }

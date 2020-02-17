@@ -32,13 +32,12 @@ import thaumcraft.client.lib.obj.AdvancedModelLoader;
 import thaumcraft.client.lib.obj.IModelCustom;
 import thaumcraft.common.items.casters.ItemFocus;
 import thecodex6824.thaumicaugmentation.api.ThaumicAugmentationAPI;
+import thecodex6824.thaumicaugmentation.client.renderer.texture.TATextures;
 import thecodex6824.thaumicaugmentation.common.entity.EntityAutocasterBase;
 
 public class RenderAutocaster<T extends EntityAutocasterBase> extends Render<T> {
 
     protected static final ResourceLocation MODEL = new ResourceLocation(ThaumicAugmentationAPI.MODID, "models/entity/autocaster.obj");
-    protected static final ResourceLocation TEXTURE_NORMAL = new ResourceLocation(ThaumicAugmentationAPI.MODID, "textures/entities/autocaster.png");
-    protected static final ResourceLocation TEXTURE_ELDRITCH = new ResourceLocation(ThaumicAugmentationAPI.MODID, "textures/entities/autocaster_eldritch.png");
     
     protected boolean eldritch;
     protected IModelCustom model;
@@ -51,7 +50,7 @@ public class RenderAutocaster<T extends EntityAutocasterBase> extends Render<T> 
     
     @Override
     public void doRender(EntityAutocasterBase entity, double x, double y, double z, float entityYaw, float partialTicks) {
-        bindTexture(eldritch ? TEXTURE_ELDRITCH : TEXTURE_NORMAL);
+        bindTexture(getEntityTexture(entity));
         GlStateManager.pushMatrix();
         GlStateManager.enableRescaleNormal();
         GlStateManager.translate(x, y, z);
@@ -83,7 +82,14 @@ public class RenderAutocaster<T extends EntityAutocasterBase> extends Render<T> 
             default:
                 break;
         }
+        
+        boolean damageTint = false;
         GlStateManager.translate(0, -0.5, 0);
+        if (entity.hurtTime > 0) {
+            damageTint = true;
+            GlStateManager.color(1.0F, 0.5F, 0.5F, 1.0F);
+        } 
+        
         model.renderPart("base");
         GlStateManager.popMatrix();
         GlStateManager.translate(0, 0.5, 0);
@@ -92,14 +98,21 @@ public class RenderAutocaster<T extends EntityAutocasterBase> extends Render<T> 
         GlStateManager.rotate(entity.prevRotationPitch + (entity.rotationPitch - entity.prevRotationPitch) * partialTicks,
                 1.0F, 0.0F, 0.0F);
         GlStateManager.translate(0, -0.5, 0);
+        if (entity.hurtTime > 0) {
+            float shake = entity.hurtTime / 2048.0F;
+            GlStateManager.translate(entity.getRNG().nextGaussian() * shake, entity.getRNG().nextGaussian() * shake,
+                    entity.getRNG().nextGaussian() * shake);
+        }
         model.renderPart("sphere");
         ItemStack focus = entity.getHeldItemMainhand();
         if (focus != null && focus.getItem() instanceof ItemFocus) {
             int color = ((ItemFocus) focus.getItem()).getFocusColor(focus);
-            GlStateManager.color(((color >> 16) & 0xFF) / 255.0F, ((color >> 8) & 0xFF) / 255.0F, (color & 0xFF) / 255.0F, 1.0F);
+            GlStateManager.color(((color >> 16) & 0xFF) / 255.0F, ((color >> 8) & 0xFF) / (damageTint ? 510.0F : 255.0F),
+                    (color & 0xFF) / (damageTint ? 510.0F : 255.0F), 1.0F);
             model.renderPart("focus");
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         }
+        
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         GlStateManager.disableRescaleNormal();
         GlStateManager.popMatrix();
     }
@@ -107,7 +120,7 @@ public class RenderAutocaster<T extends EntityAutocasterBase> extends Render<T> 
     @Override
     @Nullable
     protected ResourceLocation getEntityTexture(EntityAutocasterBase entity) {
-        return eldritch ? TEXTURE_ELDRITCH : TEXTURE_NORMAL;
+        return eldritch ? TATextures.AUTOCASTER_ELDRITCH : TATextures.AUTOCASTER_NORMAL;
     }
     
 }

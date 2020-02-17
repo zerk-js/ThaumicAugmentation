@@ -23,6 +23,7 @@ package thecodex6824.thaumicaugmentation.common.tile;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -60,6 +61,7 @@ import net.minecraftforge.common.model.animation.IAnimationStateMachine;
 import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.fml.common.network.NetworkRegistry.TargetPoint;
 import thaumcraft.api.aspects.Aspect;
+import thaumcraft.api.crafting.IInfusionStabiliser;
 import thaumcraft.api.crafting.IInfusionStabiliserExt;
 import thaumcraft.api.items.IGogglesDisplayExtended;
 import thaumcraft.common.lib.SoundsTC;
@@ -81,6 +83,7 @@ import thecodex6824.thaumicaugmentation.common.network.TANetwork;
 import thecodex6824.thaumicaugmentation.common.tile.trait.IAnimatedTile;
 import thecodex6824.thaumicaugmentation.common.tile.trait.IBreakCallback;
 
+@SuppressWarnings("deprecation")
 public class TileImpetusMatrix extends TileEntity implements ITickable, IAnimatedTile, IBreakCallback, IGogglesDisplayExtended {
 
     protected static final long CELL_CAPACITY = 500;
@@ -191,18 +194,17 @@ public class TileImpetusMatrix extends TileEntity implements ITickable, IAnimate
         gain = -1.0F;
     }
     
-    @SuppressWarnings("deprecation")
     protected float calculateStabilityGain() {
-        ArrayList<BlockPos> positions = new ArrayList<>();
+        HashSet<BlockPos> positions = new HashSet<>();
         MutableBlockPos check = new MutableBlockPos();
-        for (int x = 0; x < 3; ++x) {
-            for (int z = 0; z < 3; ++z) {
+        for (int x = -2; x < 3; ++x) {
+            for (int z = -2; z < 3; ++z) {
                 check.setPos(x + pos.getX(), 0, z + pos.getZ());
                 for (int y = -3; y < 4; ++y) {
                     check.setY(y + pos.getY());
                     if (world.isBlockLoaded(check) && world.isBlockLoaded(new BlockPos(-x + pos.getX(), y + pos.getY(), -z + pos.getZ()))) {
-                        Block b = world.getBlockState(check).getBlock();
-                        if (b == Blocks.SKULL || b instanceof IInfusionStabiliserExt && ((IInfusionStabiliserExt) b).canStabaliseInfusion(world, check))
+                        Block b1 = world.getBlockState(check).getBlock();
+                        if (b1 == Blocks.SKULL || (b1 instanceof IInfusionStabiliser && ((IInfusionStabiliser) b1).canStabaliseInfusion(world, check)))
                             positions.add(check.toImmutable());
                     }
                 }
@@ -211,40 +213,44 @@ public class TileImpetusMatrix extends TileEntity implements ITickable, IAnimate
         
         float result = 0.0F;
         ArrayList<BlockPos> issues = new ArrayList<>();
-        MutableBlockPos negative = new MutableBlockPos();
         Object2IntOpenHashMap<Block> counts = new Object2IntOpenHashMap<>();
+        HashSet<BlockPos> visited = new HashSet<>();
+        MutableBlockPos negative = new MutableBlockPos();
         for (BlockPos positive : positions) {
-            int oppX = -(positive.getX() - pos.getX()) + pos.getX();
-            int oppZ = -(positive.getZ() - pos.getZ()) + pos.getZ();
-            negative.setPos(oppX, positive.getY(), oppZ);
-            float stab1 = 0.0F, stab2 = 0.0F;
-            Block b1 = world.getBlockState(positive).getBlock();
-            Block b2 = world.getBlockState(negative).getBlock();
-            if (b1 instanceof IInfusionStabiliserExt)
-                stab1 = ((IInfusionStabiliserExt) b1).getStabilizationAmount(world, positive);
-            else if (b1 == Blocks.SKULL)
-                stab1 = 0.1F;
-            
-            if (b2 instanceof IInfusionStabiliserExt)
-                stab2 = ((IInfusionStabiliserExt) b2).getStabilizationAmount(world, negative);
-            else if (b2 == Blocks.SKULL)
-                stab2 = 0.1F;
-            
-            if (b1 == b2 && b1 != null && stab1 > 0.0F && DoubleMath.fuzzyEquals(stab1, stab2, 0.00001F)) {
-                if (b1 instanceof IInfusionStabiliserExt && ((IInfusionStabiliserExt) b1).hasSymmetryPenalty(world, positive, negative)) {
-                    result -= ((IInfusionStabiliserExt) b1).getSymmetryPenalty(world, positive);
-                    issues.add(positive);
+            if (!visited.contains(positive)) {
+                negative.setPos(-(positive.getX() - pos.getX()) + pos.getX(), positive.getY(), -(positive.getZ() - pos.getZ()) + pos.getZ());
+                float stab1 = 0.0F, stab2 = 0.0F;
+                Block b1 = world.getBlockState(positive).getBlock();
+                Block b2 = world.getBlockState(negative).getBlock();
+                if (b1 instanceof IInfusionStabiliserExt)
+                    stab1 = ((IInfusionStabiliserExt) b1).getStabilizationAmount(world, positive);
+                else if (b1 == Blocks.SKULL || b1 instanceof IInfusionStabiliser)
+                    stab1 = 0.1F;
+                
+                if (b2 instanceof IInfusionStabiliserExt)
+                    stab2 = ((IInfusionStabiliserExt) b2).getStabilizationAmount(world, negative);
+                else if (b2 == Blocks.SKULL || b2 instanceof IInfusionStabiliser)
+                    stab2 = 0.1F;
+                
+                if (b1 == b2 && b1 != null && stab1 > 0.0F && DoubleMath.fuzzyEquals(stab1, stab2, 0.00001F)) {
+                    if (b1 instanceof IInfusionStabiliserExt && ((IInfusionStabiliserExt) b1).hasSymmetryPenalty(world, positive, negative)) {
+                        result -= ((IInfusionStabiliserExt) b1).getSymmetryPenalty(world, positive);
+                        issues.add(positive);
+                    }
+                    else {
+                        int current = counts.getInt(b1);
+                        result += current > 0 ? stab1 * Math.pow(0.75, current) : stab1;
+                        counts.addTo(b1, 1);
+                    }
                 }
                 else {
-                    int current = counts.getInt(b1);
-                    result += current > 0 ? stab1 * Math.pow(0.75, current) : stab1;
-                    counts.addTo(b1, 1);
+                    result -= Math.max(stab1, stab2);
+                    issues.add(positive);
+                    issues.add(negative.toImmutable());
                 }
-            }
-            else {
-                result -= Math.max(stab1, stab2);
-                issues.add(positive);
-                issues.add(negative.toImmutable());
+                
+                visited.add(positive);
+                visited.add(negative.toImmutable());
             }
         }
         
@@ -260,9 +266,10 @@ public class TileImpetusMatrix extends TileEntity implements ITickable, IAnimate
     
     @Override
     public void update() {
-        if (!world.isRemote && ticks++ % 10 == 0) {
+        if (!world.isRemote && ++ticks % 10 == 0) {
             if (ticks % 20 == 0) {
                 NodeHelper.validateOutputs(world, prosumer);
+                buffer.validateEnergy();
                 ConsumeResult result = prosumer.consume(getTotalCells() * CELL_CAPACITY, false);
                 if (result.energyConsumed > 0) {
                     NodeHelper.syncAllImpetusTransactions(result.paths.keySet());
@@ -279,7 +286,7 @@ public class TileImpetusMatrix extends TileEntity implements ITickable, IAnimate
             stability += gain;
             stability = Math.max(Math.min(stability, MAX_STABILITY), MIN_STABILITY);
             if (stability < 0.0F && world.rand.nextInt(1500) <= Math.abs(stability)) {
-                if (world.rand.nextInt(1) == 0) {
+                if (world.rand.nextInt(5) == 0) {
                     if (world.rand.nextBoolean()) {
                         IBlockState state = world.getBlockState(pos.up());
                         int info = state.getValue(IImpetusCellInfo.CELL_INFO);
@@ -448,7 +455,7 @@ public class TileImpetusMatrix extends TileEntity implements ITickable, IAnimate
                 TextFormatting.BOLD + new TextComponentTranslation(stabName).getFormattedText(),
                 TextFormatting.GOLD + "" + TextFormatting.ITALIC + STAB_FORMATTER.format(gain) + 
                     " " + new TextComponentTranslation("stability.gain").getFormattedText(),
-                TextFormatting.RED + new TextComponentTranslation("stability.range").getFormattedText() + TextFormatting.RED +
+                TextFormatting.RED + "" + TextFormatting.ITALIC + new TextComponentTranslation("stability.range").getFormattedText() + TextFormatting.RED +
                 TextFormatting.ITALIC + STAB_FORMATTER.format(loss) + " " + new TextComponentTranslation("stability.loss").getFormattedText()
             };
         }
@@ -480,7 +487,7 @@ public class TileImpetusMatrix extends TileEntity implements ITickable, IAnimate
         super.handleUpdateTag(tag);
         prosumer.init(world);
         gain = tag.getFloat("gain");
-        stability = tag.getFloat("stability");
+        stability = tag.getFloat("stab");
     }
     
     @Override

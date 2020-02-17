@@ -33,6 +33,8 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnumEnchantmentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.IProjectile;
@@ -56,6 +58,7 @@ import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
@@ -237,6 +240,11 @@ public class ItemPrimalCutter extends ItemTool implements IWarpingGear, IModelPr
     }
     
     @Override
+    public boolean canApplyAtEnchantingTable(ItemStack stack, Enchantment enchantment) {
+        return enchantment.type == EnumEnchantmentType.WEAPON || super.canApplyAtEnchantingTable(stack, enchantment);
+    }
+    
+    @Override
     public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> items) {
         if (tab == TAItems.CREATIVE_TAB || tab == CreativeTabs.SEARCH) {
             ItemStack stack = new ItemStack(this);
@@ -271,10 +279,10 @@ public class ItemPrimalCutter extends ItemTool implements IWarpingGear, IModelPr
     @Override
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, @Nullable World world, List<String> tooltip, ITooltipFlag flag) {
-        tooltip.add(TextFormatting.GOLD + new TextComponentTranslation("enchantment.special.sapgreat").getFormattedText());
+        tooltip.add(new TextComponentTranslation("enchantment.special.sapgreat").setStyle(new Style().setColor(TextFormatting.GOLD)).getFormattedText());
         super.addInformation(stack, world, tooltip, flag);
         if (stack.hasTagCompound() && stack.getTagCompound().getBoolean("drawingDisabled"))
-            tooltip.add(TextFormatting.RED + new TextComponentTranslation("thaumicaugmentation.text.drawing_disabled").getFormattedText());
+            tooltip.add(new TextComponentTranslation("thaumicaugmentation.text.drawing_disabled").setStyle(new Style().setColor(TextFormatting.RED)).getFormattedText());
     }
     
 }

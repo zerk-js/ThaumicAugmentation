@@ -40,6 +40,7 @@ import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -47,6 +48,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
@@ -79,6 +81,9 @@ import thecodex6824.thaumicaugmentation.api.ThaumicAugmentationAPI;
 import thecodex6824.thaumicaugmentation.api.augment.AugmentAPI;
 import thecodex6824.thaumicaugmentation.api.augment.CapabilityAugment;
 import thecodex6824.thaumicaugmentation.api.augment.CapabilityAugmentableItem;
+import thecodex6824.thaumicaugmentation.api.augment.IAugment;
+import thecodex6824.thaumicaugmentation.api.augment.IAugmentableItem;
+import thecodex6824.thaumicaugmentation.api.augment.builder.IElytraHarnessAugment;
 import thecodex6824.thaumicaugmentation.api.augment.builder.caster.CasterAugmentBuilder;
 import thecodex6824.thaumicaugmentation.api.augment.builder.caster.ICustomCasterAugment;
 import thecodex6824.thaumicaugmentation.api.client.ImpetusRenderingManager;
@@ -104,7 +109,7 @@ import thecodex6824.thaumicaugmentation.client.fx.FXBlockWardFixed;
 import thecodex6824.thaumicaugmentation.client.gui.GUIArcaneTerraformer;
 import thecodex6824.thaumicaugmentation.client.gui.GUIAutocaster;
 import thecodex6824.thaumicaugmentation.client.gui.GUIWardedChest;
-import thecodex6824.thaumicaugmentation.client.model.BuiltInModel;
+import thecodex6824.thaumicaugmentation.client.model.BuiltInRendererModel;
 import thecodex6824.thaumicaugmentation.client.model.CustomCasterAugmentModel;
 import thecodex6824.thaumicaugmentation.client.model.MorphicToolModel;
 import thecodex6824.thaumicaugmentation.client.model.ProviderModel;
@@ -114,11 +119,13 @@ import thecodex6824.thaumicaugmentation.client.renderer.entity.RenderAutocaster;
 import thecodex6824.thaumicaugmentation.client.renderer.entity.RenderDimensionalFracture;
 import thecodex6824.thaumicaugmentation.client.renderer.entity.RenderFocusShield;
 import thecodex6824.thaumicaugmentation.client.renderer.layer.RenderLayerHarness;
+import thecodex6824.thaumicaugmentation.client.renderer.texture.TATextures;
 import thecodex6824.thaumicaugmentation.client.renderer.tile.ListeningAnimatedTESR;
 import thecodex6824.thaumicaugmentation.client.renderer.tile.RenderImpetusMirror;
 import thecodex6824.thaumicaugmentation.client.renderer.tile.RenderRiftJar;
 import thecodex6824.thaumicaugmentation.client.renderer.tile.RenderRiftMonitor;
 import thecodex6824.thaumicaugmentation.client.renderer.tile.RenderRiftMoverOutput;
+import thecodex6824.thaumicaugmentation.client.renderer.tile.RenderStarfieldGlass;
 import thecodex6824.thaumicaugmentation.client.renderer.tile.RenderVoidRechargePedestal;
 import thecodex6824.thaumicaugmentation.client.shader.TAShaderManager;
 import thecodex6824.thaumicaugmentation.client.shader.TAShaders;
@@ -134,6 +141,7 @@ import thecodex6824.thaumicaugmentation.common.item.ItemCustomCasterStrengthProv
 import thecodex6824.thaumicaugmentation.common.item.ItemFractureLocator;
 import thecodex6824.thaumicaugmentation.common.item.ItemKey;
 import thecodex6824.thaumicaugmentation.common.network.PacketAugmentableItemSync;
+import thecodex6824.thaumicaugmentation.common.network.PacketBaubleChange;
 import thecodex6824.thaumicaugmentation.common.network.PacketBiomeUpdate;
 import thecodex6824.thaumicaugmentation.common.network.PacketConfigSync;
 import thecodex6824.thaumicaugmentation.common.network.PacketEntityCast;
@@ -143,6 +151,8 @@ import thecodex6824.thaumicaugmentation.common.network.PacketFullWardSync;
 import thecodex6824.thaumicaugmentation.common.network.PacketImpetusNodeUpdate;
 import thecodex6824.thaumicaugmentation.common.network.PacketImpetusTransaction;
 import thecodex6824.thaumicaugmentation.common.network.PacketImpulseBeam;
+import thecodex6824.thaumicaugmentation.common.network.PacketImpulseBurst;
+import thecodex6824.thaumicaugmentation.common.network.PacketImpulseRailgunProjectile;
 import thecodex6824.thaumicaugmentation.common.network.PacketLivingEquipmentChange;
 import thecodex6824.thaumicaugmentation.common.network.PacketParticleEffect;
 import thecodex6824.thaumicaugmentation.common.network.PacketRiftJarInstability;
@@ -156,6 +166,7 @@ import thecodex6824.thaumicaugmentation.common.tile.TileRiftJar;
 import thecodex6824.thaumicaugmentation.common.tile.TileRiftMonitor;
 import thecodex6824.thaumicaugmentation.common.tile.TileRiftMoverOutput;
 import thecodex6824.thaumicaugmentation.common.tile.TileStabilityFieldGenerator;
+import thecodex6824.thaumicaugmentation.common.tile.TileStarfieldGlass;
 import thecodex6824.thaumicaugmentation.common.tile.TileVisRegenerator;
 import thecodex6824.thaumicaugmentation.common.tile.TileVoidRechargePedestal;
 import thecodex6824.thaumicaugmentation.common.tile.TileWardedChest;
@@ -271,8 +282,14 @@ public class ClientProxy extends ServerProxy {
             handleFXShieldPacket((PacketFXShield) message, context);
         else if (message instanceof PacketImpulseBeam)
             handleImpulseBeamPacket((PacketImpulseBeam) message, context);
+        else if (message instanceof PacketImpulseBurst)
+            handleImpulseBurstPacket((PacketImpulseBurst) message, context);
+        else if (message instanceof PacketImpulseRailgunProjectile)
+            handleImpulseRailgunPacket((PacketImpulseRailgunProjectile) message, context);
         else if (message instanceof PacketLivingEquipmentChange)
             handleLivingEquipmentChangePacket((PacketLivingEquipmentChange) message, context);
+        else if (message instanceof PacketBaubleChange)
+            handleBaubleChangePacket((PacketBaubleChange) message, context);
         else
             ThaumicAugmentation.getLogger().warn("An unknown packet was received and will be dropped: " + message.getClass().toString());
     }
@@ -450,6 +467,23 @@ public class ClientProxy extends ServerProxy {
                     
                     break;
                 }
+                case FIRE_MULTIPLE_RAND: {
+                    if (d.length == 5) {
+                        double x = d[0], y = d[1], z = d[2];
+                        float size = (float) d[3];
+                        int color = (int) d[4];
+                        float r = ((color >> 16) & 0xFF) / 255.0F;
+                        float g = ((color >> 8) & 0xFF) / 255.0F;
+                        float b = (color & 0xFF) / 255.0F;
+                        for (int i = 0; i < rand.nextInt(4) + 3; ++i) {
+                            FXDispatcher.INSTANCE.drawFireMote((float) x + (rand.nextFloat() - rand.nextFloat()),
+                                    (float) y + (rand.nextFloat() - rand.nextFloat()), (float) z + (rand.nextFloat() - rand.nextFloat()),
+                                    0, 0, 0, r, g, b, 0.75F, size);
+                        }
+                    }
+                    
+                    break;
+                }
              
                 default: {break;}
             }
@@ -610,11 +644,67 @@ public class ClientProxy extends ServerProxy {
             RenderEventHandler.onImpulseBeam((EntityLivingBase) entity, message.shouldStopBeam());
     }
     
+    protected void handleImpulseBurstPacket(PacketImpulseBurst message, MessageContext context) {
+        World world = Minecraft.getMinecraft().world;
+        Entity entity = world.getEntityByID(message.getEntityID());
+        if (entity instanceof EntityLivingBase) {
+            Vec3d p = getRenderHelper().estimateImpulseCannonFiringPoint((EntityLivingBase) entity,
+                    Minecraft.getMinecraft().getRenderPartialTicks());
+            Vec3d v = message.getVelocity();
+            for (int i = 0; i < 3; ++i) {
+                FXGeneric fx = new FXGeneric(world, p.x, p.y, p.z, v.x, v.y, v.z);
+                fx.setMaxAge(10);
+                fx.setRBGColorF(0.35F, 0.35F, 0.65F);
+                fx.setAlphaF(0.85F);
+                fx.setGridSize(64);
+                fx.setParticles(264, 8, 1);
+                fx.setScale(1.0F);
+                fx.setLayer(1);
+                fx.setLoop(true);
+                fx.setNoClip(false);
+                fx.setRotationSpeed(world.rand.nextFloat(), world.rand.nextBoolean() ? 1.0F : -1.0F);
+                ParticleEngine.addEffect(world, fx);
+                p = p.add(v);
+            }
+        }
+    }
+    
+    protected void handleImpulseRailgunPacket(PacketImpulseRailgunProjectile message, MessageContext context) {
+        World world = Minecraft.getMinecraft().world;
+        Entity entity = world.getEntityByID(message.getEntityID());
+        if (entity instanceof EntityLivingBase) {
+            Vec3d p = getRenderHelper().estimateImpulseCannonFiringPoint((EntityLivingBase) entity,
+                    Minecraft.getMinecraft().getRenderPartialTicks());
+            Vec3d v = message.getVelocity();
+            FXGeneric fx = new FXGeneric(world, p.x, p.y, p.z, v.x, v.y, v.z);
+            fx.setMaxAge(10);
+            fx.setRBGColorF(0.35F, 0.35F, 0.65F);
+            fx.setAlphaF(0.85F);
+            fx.setGridSize(64);
+            fx.setParticles(264, 8, 1);
+            fx.setScale(2.5F);
+            fx.setLayer(1);
+            fx.setLoop(true);
+            fx.setNoClip(false);
+            fx.setRotationSpeed(world.rand.nextFloat(), world.rand.nextBoolean() ? 1.0F : -1.0F);
+            ParticleEngine.addEffect(world, fx);
+        }
+    }
+    
     protected void handleLivingEquipmentChangePacket(PacketLivingEquipmentChange message, MessageContext context) {
         Entity entity = Minecraft.getMinecraft().world.getEntityByID(message.getEntityID());
         if (entity instanceof EntityLivingBase) {
             ClientEventHandler.onClientEquipmentChange(new ClientLivingEquipmentChangeEvent((EntityLivingBase) entity,
                     message.getSlot(), message.getStack()));
+        }
+    }
+    
+    protected void handleBaubleChangePacket(PacketBaubleChange message, MessageContext context) {
+        Entity entity = Minecraft.getMinecraft().world.getEntityByID(message.getEntityID());
+        if (entity instanceof EntityLivingBase) {
+            // this is my internal code so faking args like this is fine (they are unused atm anyway)
+            ClientEventHandler.onClientEquipmentChange(new ClientLivingEquipmentChangeEvent((EntityLivingBase) entity,
+                    EntityEquipmentSlot.HEAD, ItemStack.EMPTY));
         }
     }
 
@@ -653,7 +743,7 @@ public class ClientProxy extends ServerProxy {
                 () -> CasterAugmentBuilder.getAllEffectProviders(), stack -> ItemCustomCasterEffectProvider.getProviderID(stack)));
         loader.registerLoader(new CustomCasterAugmentModel.Loader());
         loader.registerLoader(new MorphicToolModel.Loader());
-        loader.registerLoader(new BuiltInModel.Loader());
+        loader.registerLoader(new BuiltInRendererModel.Loader());
         ModelLoaderRegistry.registerLoader(loader);
     }
 
@@ -672,6 +762,7 @@ public class ClientProxy extends ServerProxy {
         ClientRegistry.bindTileEntitySpecialRenderer(TileImpetusMirror.class, new RenderImpetusMirror());
         ClientRegistry.bindTileEntitySpecialRenderer(TileRiftMonitor.class, new RenderRiftMonitor());
         ClientRegistry.bindTileEntitySpecialRenderer(TileStabilityFieldGenerator.class, new ListeningAnimatedTESR<>());
+        ClientRegistry.bindTileEntitySpecialRenderer(TileStarfieldGlass.class, new RenderStarfieldGlass());
         registerItemColorHandlers();
         registerBlockColorHandlers();
         for (RenderPlayer render : Minecraft.getMinecraft().getRenderManager().getSkinMap().values())
@@ -681,16 +772,18 @@ public class ClientProxy extends ServerProxy {
     @Override
     public void postInit() {
         super.postInit();
+        TATextures.setupTextures();
         if (TAShaderManager.shouldUseShaders()) {
             TAShaders.FRACTURE = TAShaderManager.registerShader(new ResourceLocation(ThaumicAugmentationAPI.MODID, "fracture"));
             TAShaders.EMPTINESS_SKY = TAShaderManager.registerShader(new ResourceLocation(ThaumicAugmentationAPI.MODID, "emptiness_sky"));
             TAShaders.FLUX_RIFT = TAShaderManager.registerShader(new ResourceLocation(ThaumicAugmentationAPI.MODID, "ender"));
+            TAShaders.MIRROR = TAShaderManager.registerShader(new ResourceLocation(ThaumicAugmentationAPI.MODID, "mirror"));
         }
     }
 
     private static void registerItemColorHandlers() {
         ItemColors registerTo = Minecraft.getMinecraft().getItemColors();
-        IItemColor casterFocusColors = new IItemColor() {
+        registerTo.registerItemColorHandler(new IItemColor() {
             @Override
             public int colorMultiplier(ItemStack stack, int tintIndex) {
                 if (tintIndex == 1 && stack.getItem() instanceof ICaster && ((ICaster) stack.getItem()).getFocus(stack) != null)
@@ -700,10 +793,9 @@ public class ClientProxy extends ServerProxy {
 
                 return -1;
             }
-        };
-        registerTo.registerItemColorHandler(casterFocusColors, TAItems.GAUNTLET);
+        }, TAItems.GAUNTLET);
 
-        IItemColor keyIDColors = new IItemColor() {
+        registerTo.registerItemColorHandler(new IItemColor() {
             @Override
             public int colorMultiplier(ItemStack stack, int tintIndex) {
                 if (tintIndex == 1 && stack.getItem() instanceof ItemKey)
@@ -711,10 +803,9 @@ public class ClientProxy extends ServerProxy {
 
                 return -1;
             }
-        };
-        registerTo.registerItemColorHandler(keyIDColors, TAItems.KEY);
+        }, TAItems.KEY);
 
-        IItemColor dyeableMisc = new IItemColor() {
+        registerTo.registerItemColorHandler(new IItemColor() {
             @Override
             public int colorMultiplier(ItemStack stack, int tintIndex) {
                 if (tintIndex == 1 && stack.getItem() instanceof IDyeableItem)
@@ -722,10 +813,9 @@ public class ClientProxy extends ServerProxy {
 
                 return -1;
             }
-        };
-        registerTo.registerItemColorHandler(dyeableMisc, TAItems.VOID_BOOTS);
+        }, TAItems.VOID_BOOTS);
         
-        IItemColor augmentCrystal = new IItemColor() {
+        registerTo.registerItemColorHandler(new IItemColor() {
             @Override
             public int colorMultiplier(ItemStack stack, int tintIndex) {
                 if (tintIndex == 1 && stack.getCapability(CapabilityAugment.AUGMENT, null) instanceof ICustomCasterAugment) {
@@ -734,10 +824,9 @@ public class ClientProxy extends ServerProxy {
                 }
                 return -1;
             }
-        };
-        registerTo.registerItemColorHandler(augmentCrystal, TAItems.AUGMENT_CUSTOM);
+        }, TAItems.AUGMENT_CUSTOM);
         
-        IItemColor fractureLocatorColor = new IItemColor() {
+        registerTo.registerItemColorHandler(new IItemColor() {
             @Override
             public int colorMultiplier(ItemStack stack, int tintIndex) {
                 if (tintIndex == 1 && stack.getItem() instanceof ItemFractureLocator)
@@ -745,10 +834,9 @@ public class ClientProxy extends ServerProxy {
                 
                 return -1;
             }
-        };
-        registerTo.registerItemColorHandler(fractureLocatorColor, TAItems.FRACTURE_LOCATOR);
+        }, TAItems.FRACTURE_LOCATOR);
         
-        IItemColor morphicTool = new IItemColor() {
+        registerTo.registerItemColorHandler(new IItemColor() {
             @Override
             public int colorMultiplier(ItemStack stack, int tintIndex) {
                 ItemStack display = stack.getCapability(CapabilityMorphicTool.MORPHIC_TOOL, null).getDisplayStack();
@@ -757,10 +845,9 @@ public class ClientProxy extends ServerProxy {
                 else
                     return -1;
             }
-        };
-        registerTo.registerItemColorHandler(morphicTool, TAItems.MORPHIC_TOOL);
+        }, TAItems.MORPHIC_TOOL);
         
-        IItemColor biomeSelector = new IItemColor() {
+        registerTo.registerItemColorHandler(new IItemColor() {
             @Override
             public int colorMultiplier(ItemStack stack, int tintIndex) {
                 IBiomeSelector selected = stack.getCapability(CapabilityBiomeSelector.BIOME_SELECTOR, null);
@@ -774,10 +861,9 @@ public class ClientProxy extends ServerProxy {
                 
                 return -1;
             }
-        };
-        registerTo.registerItemColorHandler(biomeSelector, TAItems.BIOME_SELECTOR);
+        }, TAItems.BIOME_SELECTOR);
         
-        IItemColor focus = new IItemColor() {
+        registerTo.registerItemColorHandler(new IItemColor() {
             @Override
             public int colorMultiplier(ItemStack stack, int tintIndex) {
                 if (tintIndex == 0 && stack.getItem() instanceof ItemFocus)
@@ -785,8 +871,35 @@ public class ClientProxy extends ServerProxy {
                 
                 return -1;
             }
-        };
-        registerTo.registerItemColorHandler(focus, TAItems.FOCUS_ANCIENT);
+        }, TAItems.FOCUS_ANCIENT);
+        
+        registerTo.registerItemColorHandler(new IItemColor() {
+            @Override
+            public int colorMultiplier(ItemStack stack, int tintIndex) {
+                if (tintIndex == 0) {
+                    IAugmentableItem item = stack.getCapability(CapabilityAugmentableItem.AUGMENTABLE_ITEM, null);
+                    if (item != null) {
+                        for (ItemStack augment : item.getAllAugments()) {
+                            IAugment a = augment.getCapability(CapabilityAugment.AUGMENT, null);
+                            if (a instanceof IElytraHarnessAugment && ((IElytraHarnessAugment) a).isCosmetic())
+                                return ((IElytraHarnessAugment) a).getCosmeticItemTint();
+                        }
+                    }
+                }
+                
+                return -1;
+            }
+        }, TAItems.ELYTRA_HARNESS);
+        
+        registerTo.registerItemColorHandler(new IItemColor() {
+            @Override
+            public int colorMultiplier(ItemStack stack, int tintIndex) {
+                if (tintIndex == 1)
+                    return 0x990099;
+                
+                return -1;
+            }
+        }, TABlocks.IMPETUS_GATE);
     }
     
     private static void registerBlockColorHandlers() {
@@ -829,12 +942,16 @@ public class ClientProxy extends ServerProxy {
                 if (tintIndex == 1 && world != null && pos != null) {
                     TileEntity tile = world.getTileEntity(pos);
                     if (tile instanceof IImpetusGate) {
-                        if (((IImpetusGate) tile).isInRedstoneMode())
-                            return 0xAA0000;
+                        if (((IImpetusGate) tile).isInRedstoneMode()) {
+                            if (world instanceof World && ((World) world).isBlockPowered(pos))
+                                return 0xCC0000;
+                            else
+                                return 0x550000;
+                        }
                         else {
                             int level = ((IImpetusGate) tile).getManualLimitLevel();
                             if (level > -1 && level < 16) {
-                                int component = (int) (level / 15.0 * 255.0) & 0xFF;
+                                int component = (int) (level / 15.0 * 153.0) & 0xFF;
                                 return (component << 16) | component;
                             }
                         }

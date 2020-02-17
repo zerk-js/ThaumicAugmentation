@@ -30,8 +30,6 @@ import java.util.TreeMap;
 
 import javax.annotation.Nullable;
 
-import com.mojang.realmsclient.gui.ChatFormatting;
-
 import net.minecraft.block.BlockCauldron;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.util.ITooltipFlag;
@@ -312,9 +310,8 @@ public class ItemTieredCasterGauntlet extends ItemTABase implements IArchitect, 
             FocusPackage fPackage = ItemFocus.getPackage(getFocusStack(stack));
             if (fPackage != null) {
                 for (IFocusElement element : fPackage.nodes) {
-                    if (element instanceof IArchitect) {
+                    if (element instanceof IArchitect)
                         return ((IArchitect) element).showAxis(stack, world, player, side, axis);
-                    }
                 }
             } 
         }
@@ -446,7 +443,7 @@ public class ItemTieredCasterGauntlet extends ItemTABase implements IArchitect, 
                         if (!world.isRemote) {
                             ItemStack toStore = new ItemStack(state.getBlock(), 1, state.getBlock().getMetaFromState(state));
                             try {
-                                if (state.getBlock() != Blocks.AIR) {
+                                if (!state.getBlock().isAir(state, world, pos)) {
                                     ItemStack toCopy = BlockUtils.getSilkTouchDrop(state);
                                     if (toCopy != null && !toCopy.isEmpty())
                                         toStore = toCopy.copy();
@@ -539,7 +536,8 @@ public class ItemTieredCasterGauntlet extends ItemTABase implements IArchitect, 
     @Override
     public void readNBTShareTag(ItemStack stack, @Nullable NBTTagCompound nbt) {
         if (nbt != null) {
-            ((AugmentableItem) stack.getCapability(CapabilityAugmentableItem.AUGMENTABLE_ITEM, null)).deserializeNBT(nbt.getCompoundTag("cap"));
+            if (nbt.hasKey("cap", NBT.TAG_COMPOUND))
+                ((AugmentableItem) stack.getCapability(CapabilityAugmentableItem.AUGMENTABLE_ITEM, null)).deserializeNBT(nbt.getCompoundTag("cap"));
             if (nbt.hasKey("item", NBT.TAG_COMPOUND))
                 stack.setTagCompound(nbt.getCompoundTag("item"));
             else if (FMLCommonHandler.instance().getEffectiveSide() == Side.SERVER) {
@@ -548,8 +546,12 @@ public class ItemTieredCasterGauntlet extends ItemTABase implements IArchitect, 
                     stack.setTagCompound(nbt);
             }
             
-            if (FMLCommonHandler.instance().getEffectiveSide() == Side.CLIENT && !ThaumicAugmentation.proxy.isSingleplayer())
+            if (FMLCommonHandler.instance().getEffectiveSide() == Side.CLIENT && !ThaumicAugmentation.proxy.isSingleplayer()) {
+                if (!stack.hasTagCompound())
+                    stack.setTagCompound(new NBTTagCompound());
+                
                 stack.getTagCompound().setTag("cap", nbt.getCompoundTag("cap"));
+            }
         }
     }
     
@@ -585,7 +587,7 @@ public class ItemTieredCasterGauntlet extends ItemTABase implements IArchitect, 
         int color = getDyedColor(stack);
         if (color != getDefaultDyedColorForMeta(stack.getMetadata())) {
             if (flag.isAdvanced())
-                tooltip.add(new TextComponentTranslation("item.color", ChatFormatting.GRAY + String.format("#%06X", color)).getFormattedText());
+                tooltip.add(new TextComponentTranslation("item.color", TextFormatting.GRAY + String.format("#%06X", color)).getFormattedText());
             else
                 tooltip.add(TextFormatting.ITALIC + new TextComponentTranslation("item.dyed").getFormattedText());
         }

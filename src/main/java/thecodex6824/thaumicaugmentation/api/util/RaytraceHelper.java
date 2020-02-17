@@ -71,6 +71,40 @@ public class RaytraceHelper {
         return ret;
     }
     
+    public static Vec3d raytracePosition(EntityLivingBase user, double maxDistance, float partialTicks) {
+        Vec3d eyes = user.getPositionEyes(partialTicks);
+        Vec3d look = user.getLook(partialTicks);
+        Vec3d extended = eyes.add(look.x * maxDistance, look.y * maxDistance, look.z * maxDistance);
+        RayTraceResult blockCheck = user.getEntityWorld().rayTraceBlocks(eyes, extended, false, true, true);
+        maxDistance = blockCheck != null ? blockCheck.hitVec.distanceTo(eyes) : maxDistance;
+        List<Entity> list = user.getEntityWorld().getEntitiesInAABBexcluding(user,
+                user.getEntityBoundingBox().expand(look.x * maxDistance, look.y * maxDistance, look.z * maxDistance).grow(1.0, 1.0, 1.0),
+                Predicates.and(EntitySelectors.NOT_SPECTATING, entity -> entity != null && entity.canBeCollidedWith()
+        ));
+        
+        double dist = maxDistance;
+        Vec3d ret = blockCheck != null ? blockCheck.hitVec : extended;
+        for (Entity entity : list) {
+            AxisAlignedBB aabb = entity.getEntityBoundingBox().grow(entity.getCollisionBorderSize());
+            if (aabb.contains(eyes)) {
+                ret = eyes;
+                break;
+            }
+            else {
+                RayTraceResult res = aabb.calculateIntercept(eyes, extended);
+                if (res != null) {
+                    double newDist = eyes.distanceTo(res.hitVec);
+                    if (newDist < dist) {
+                        ret = res.hitVec;
+                        dist = newDist;
+                    }
+                }
+            }
+        }
+
+        return ret;
+    }
+    
     @Nullable
     public static Entity raytraceEntity(EntityLivingBase user, double maxDistance) {
         Vec3d eyes = user.getPositionEyes(1.0F);
@@ -128,7 +162,7 @@ public class RaytraceHelper {
     }
     
     public static List<Entity> raytraceEntities(World world, Vec3d start, Vec3d end) {
-        return world.getEntitiesWithinAABB(Entity.class, new AxisAlignedBB(start, end),
+        return world.getEntitiesWithinAABB(Entity.class, new AxisAlignedBB(start.x, start.y, start.z, end.x, end.y, end.z),
                 Predicates.and(EntitySelectors.NOT_SPECTATING, entity -> entity != null && entity.canBeCollidedWith()
         ));
     }

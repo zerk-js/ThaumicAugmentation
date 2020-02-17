@@ -12,7 +12,7 @@
   },
   "pattern": [
     "LPL",
-    "TIT",
+    "TRT",
     "LTL"
   ],
   "key": {
@@ -28,8 +28,8 @@
       "item": "thaumcraft:tube",
       "data": 0
     },
-    "I": {
-      "item": "#CELL"
+    "R": {
+      "item": "#IMPETUS_RESONATOR"
     }
   },
   "result": {
